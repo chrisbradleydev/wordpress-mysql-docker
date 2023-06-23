@@ -1,0 +1,50 @@
+services:
+  wordpress:
+    container_name: wordpress
+    image: wordpress:php8.1-apache
+    restart: always
+    stdin_open: true
+    tty: true
+    environment:
+      WORDPRESS_DB_HOST: "${WORDPRESS_DB_HOST}"
+      WORDPRESS_DB_NAME: "${MYSQL_DATABASE}"
+      WORDPRESS_DB_PASSWORD: "${MYSQL_PASSWORD}"
+      WORDPRESS_DB_USER: "${MYSQL_USER}"
+    volumes:
+      - "wp_data:/var/www/html"
+      - "./wordpress:/var/www/html"
+      - "./php/conf/settings.ini:/usr/local/etc/php/conf.d/settings.ini"
+  mysql:
+    container_name: mysql
+    image: mysql
+    restart: always
+    environment:
+      MYSQL_DATABASE: "${MYSQL_DATABASE}"
+      MYSQL_USER: "${MYSQL_USER}"
+      MYSQL_PASSWORD: "${MYSQL_PASSWORD}"
+      MYSQL_RANDOM_ROOT_PASSWORD: "1"
+    volumes:
+      - "db_data:/var/lib/mysql"
+  nginx:
+    container_name: nginx
+    image: nginx:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - "./certbot/conf:/etc/nginx/ssl"
+      - "./certbot/data:/var/www/html"
+      - "./nginx/conf:/etc/nginx/conf.d"
+  certbot:
+    container_name: certbot
+    image: certbot/certbot:latest
+    command: certonly --webroot --webroot-path=/var/www/html --email ${EMAIL} --agree-tos --no-eff-email -d updateme.com -d www.updateme.com
+    volumes:
+      - "./certbot/conf:/etc/letsencrypt"
+      - "./certbot/data:/var/www/html"
+      - "./certbot/logs:/var/log/letsencrypt"
+
+volumes:
+  db_data:
+  wp_data:
